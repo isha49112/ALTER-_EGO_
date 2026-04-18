@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlterEgo - Not just a planner. A personality.</title>
+    <link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap)" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #FFF8F0;
+            --bg-secondary: #FFFFFF;
+            --accent-peach: #FFBE98;
+            --accent-lavender: #E8D5FF;
+            --accent-mint: #B8F4D4;
+            --accent-sky: #BDE0FE;
+            --accent-coral: #FFB5A7;
+            --text-primary: #2D2A32;
+            --text-secondary: #6B6574;
+            --shadow-soft: 0 4px 20px rgba(45, 42, 50, 0.08);
+            --shadow-hover: 0 8px 30px rgba(45, 42, 50, 0.12);
+            --border-radius: 20px;
+            --border-radius-sm: 12px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Floating Background Elements */
+        .bg-decoration {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.5;
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-1 { width: 300px; height: 300px; background: var(--accent-lavender); top: -100px; right: -100px; }
+        .bg-2 { width: 400px; height: 400px; background: var(--accent-mint); bottom: -150px; left: -150px; animation-delay: -5s; }
+        .bg-3 { width: 250px; height: 250px; background: var(--accent-peach); top: 50%; right: -50px; animation-delay: -10s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(5deg); }
+            66% { transform: translate(-20px, 20px) rotate(-5deg); }
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(45, 42, 50, 0.05);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 100px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(232, 213, 255, 0.3);
+        }
+
+        .nav-btn.active {
+            background: var(--text-primary);
+            color: white;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px 20px;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary) 0%, #6B6574 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 14px 24px;
+            border: 2px solid transparent;
+            background: var(--bg-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 100px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .mode-btn.active {
+            border-color: var(--text-primary);
+            transform: scale(1.05);
+        }
+
+        .mode-btn[data-mode="savage"] { background: linear-gradient(135deg, #FFB5A7 0%, #FF8FA3 100%); }
+        .mode-btn[data-mode="discipline"] { background: linear-gradient(135deg, #BDE0FE 0%, #A2D2FF 100%); }
+        .mode-btn[data-mode="bestie"] { background: linear-gradient(135deg, #E8D5FF 0%, #D4A5FF 100%); }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Page Sections */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 28px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Task Input */
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid rgba(45, 42, 50, 0.08);
+            border-radius: 100px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            background: var(--bg-primary);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-lavender);
+            background: white;
+        }
+
+        .add-btn {
+            padding: 14px 28px;
+            border: none;
+            background: var(--text-primary);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Task List */
+        .task-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            background: var(--accent-lavender);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+        }
+
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .task-checkbox.checked {
+            background: var(--accent-mint);
+            border-color: var(--accent-mint);
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .task-delete {
+            opacity: 0;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--accent-coral);
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover .task-delete {
+            opacity: 1;
+        }
+
+        /* Study Hours */
+        .hours-input {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hours-field {
+            width: 100px;
+            padding: 14px 20px;
+            border: 2px solid rgba(45, 42, 50, 0.08);
+            border-radius: 100px;
+            font-family: 'Inter', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            background: var(--bg-primary);
+        }
+
+        .hours-field:focus {
+            outline: none;
+            border-color: var(--accent-sky);
+        }
+
+        .hours-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .hours-display {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Mood Buttons */
+        .mood-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .mood-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 16px;
+            border: 2px solid transparent;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mood-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .mood-btn.active {
+            border-color: var(--text-primary);
+            transform: scale(1.05);
+        }
+
+        .mood-btn[data-mood="productive"] { background: var(--accent-mint); }
+        .mood-btn[data-mood="tired"] { background: var(--accent-sky); }
+        .mood-btn[data-mood="stressed"] { background: var(--accent-coral); }
+        .mood-btn[data-mood="motivated"] { background: var(--accent-lavender); }
+        .mood-btn[data-mood="neutral"] { background: var(--accent-peach); }
+
+        .mood-emoji {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* Response Box */
+        .response-box {
+            background: linear-gradient(135deg, var(--accent-lavender) 0%, var(--accent-peach) 100%);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .response-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 500;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .response-emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        /* Streak Display */
+        .streak-card {
+            background: linear-gradient(135deg, #FFE66D 0%, #FF6B6B 100%);
+            text-align: center;
+            color: white;
+        }
+
+        .streak-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .streak-label {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        .streak-fire {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Journal */
+        .journal-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            border: 2px solid rgba(45, 42, 50, 0.08);
+            border-radius: var(--border-radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+            resize: vertical;
+            background: var(--bg-primary);
+            transition: all 0.3s ease;
+        }
+
+        .journal-textarea:focus {
+            outline: none;
+            border-color: var(--accent-lavender);
+            background: white;
+        }
+
+        .journal-prompts {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .prompt-chip {
+            padding: 8px 16px;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: 100px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-chip:hover {
+            background: var(--accent-lavender);
+        }
+
+        .journal-entries {
+            margin-top: 24px;
+        }
+
+        .journal-entry {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-sm);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .journal-entry-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .journal-entry-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Stats Page */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card:nth-child(1) { background: linear-gradient(135deg, var(--accent-mint) 0%, #9FEDD7 100%); }
+        .stat-card:nth-child(2) { background: linear-gradient(135deg, var(--accent-lavender) 0%, #D4A5FF 100%); }
+        .stat-card:nth-child(3) { background: linear-gradient(135deg, var(--accent-sky) 0%, #A2D2FF 100%); }
+        .stat-card:nth-child(4) { background: linear-gradient(135deg, var(--accent-peach) 0%, #FFAB76 100%); }
+
+        /* Weekly Chart */
+        .chart-container {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 28px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .chart-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            gap: 12px;
+        }
+
+        .chart-bar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+
+        .chart-bar {
+            width: 100%;
+            max-width: 50px;
+            background: linear-gradient(180deg, var(--accent-lavender) 0%, var(--accent-mint) 100%);
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+            min-height: 4px;
+        }
+
+        .chart-bar:hover {
+            filter: brightness(0.95);
+        }
+
+        .chart-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .chart-value {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        /* Mood History */
+        .mood-history {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .mood-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mood-dot:hover {
+            transform: scale(1.2);
+        }
+
+        /* Save Button */
+        .save-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            background: linear-gradient(135deg, var(--text-primary) 0%, #4A4458 100%);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .save-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* AI Response Indicator */
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(45, 42, 50, 0.1);
+            border-radius: 100px;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }
+
+        .ai-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-mint);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(45, 42, 50, 0.2);
+            border-radius: 100px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+
+            .nav {
+                gap: 4px;
+                padding: 12px;
+            }
+
+            .nav-btn {
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+
+            .mode-selector {
+                gap: 8px;
+            }
+
+            .mode-btn {
+                padding: 12px 16px;
+                font-size: 12px;
+            }
+
+            .response-text {
+                font-size: 16px;
+            }
+
+            .streak-number {
+                font-size: 48px;
+            }
+        }
+
+        /* Checklist Page Specific */
+        .checklist-categories {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 8px 16px;
+            border: 2px solid rgba(45, 42, 50, 0.1);
+            background: var(--bg-primary);
+            border-radius: 100px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn.active {
+            background: var(--accent-lavender);
+            border-color: var(--accent-lavender);
+        }
+
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+        }
+
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .progress-text {
+            text-anchor: middle;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            fill: var(--text-primary);
+        }
+
+        .progress-label {
+            text-anchor: middle;
+            font-size: 10px;
+            fill: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Decorations -->
+    <div class="bg-decoration bg-1"></div>
+    <div class="bg-decoration bg-2"></div>
+    <div class="bg-decoration bg-3"></div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <button class="nav-btn active" data-page="home">🏠 Home</button>
+        <button class="nav-btn" data-page="checklist">✅ Checklist</button>
+        <button class="nav-btn" data-page="journal">📝 Journal</button>
+        <button class="nav-btn" data-page="stats">📊 Stats</button>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <h1 class="logo">AlterEgo</h1>
+        <p class="tagline">Not just a planner. A personality. ✨</p>
+    </header>
+
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+        <button class="mode-btn" data-mode="savage">😈 Savage</button>
+        <button class="mode-btn active" data-mode="discipline">🧠 Discipline</button>
+        <button class="mode-btn" data-mode="bestie">🫶 Soft Bestie</button>
+    </div>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Home Page -->
+        <section class="page active" id="home">
+            <div class="grid">
+                <!-- Tasks Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: var(--accent-mint);">✅</div>
+                        <h2 class="card-title">Today's Tasks</h2>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="input-field" id="taskInput" placeholder="Add a new task...">
+                        <button class="add-btn" onclick="addTask()">Add</button>
+                    </div>
+                    <div class="task-list" id="taskList">
+                        <div class="empty-state">
+                            <span class="empty-state-emoji">🎯</span>
+                            <p>No tasks yet. Add one above!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Study Hours Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: var(--accent-sky);">⏱</div>
+                        <h2 class="card-title">Study Hours</h2>
+                    </div>
+                    <div class="hours-input">
+                        <input type="number" class="hours-field" id="hoursInput" min="0" max="24" step="0.5" value="0">
+                        <span class="hours-label">hours today</span>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <span class="hours-label">Total this week</span>
+                        <div class="hours-display" id="weeklyHours">0h</div>
+                    </div>
+                </div>
+
+                <!-- Mood Tracker Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: var(--accent-lavender);">😊</div>
+                        <h2 class="card-title">How are you feeling?</h2>
+                    </div>
+                    <div class="mood-grid">
+                        <button class="mood-btn" data-mood="productive">
+                            <span class="mood-emoji">😎</span>
+                            Productive
+                        </button>
+                        <button class="mood-btn" data-mood="motivated">
+                            <span class="mood-emoji">🔥</span>
+                            Motivated
+                        </button>
+                        <button class="mood-btn" data-mood="neutral">
+                            <span class="mood-emoji">😐</span>
+                            Neutral
+                        </button>
+                        <button class="mood-btn" data-mood="tired">
+                            <span class="mood-emoji">😴</span>
+                            Tired
+                        </button>
+                        <button class="mood-btn" data-mood="stressed">
+                            <span class="mood-emoji">😭</span>
+                            Stressed
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Streak Card -->
+                <div class="card streak-card">
+                    <span class="streak-fire">🔥</span>
+                    <div class="streak-number" id="streakCount">0</div>
+                    <div class="streak-label">day streak</div>
+                </div>
+            </div>
+
+            <!-- Response Box -->
+            <div class="response-box" id="responseBox">
+                <div class="ai-badge">
+                    <span class="ai-dot"></span>
+                    AlterEgo AI
+                </div>
+                <span class="response-emoji" id="responseEmoji">🎭</span>
+                <p class="response-text" id="responseText">Select your mood and log your progress to get your personalized message!</p>
+            </div>
+
+            <!-- Save Button -->
+            <button class="save-btn" onclick="saveDay()">Save Today's Progress ✨</button>
+        </section>
+
+        <!-- Checklist Page -->
+        <section class="page" id="checklist">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: var(--accent-peach);">📋</div>
+                        <h2 class="card-title">Master Checklist</h2>
+                    </div>
+                    
+                    <div class="checklist-categories">
+                        <button class="category-btn active" data-category="all">All</button>
+                        <button class="category-btn" data-category="work">💼 Work</button>
+                        <button class="category-btn" data-category="personal">🏠 Personal</button>
+                        <button class="category-btn" data-category="health">💪 Health</button>
+                        <button class="category-btn" data-category="learning">📚 Learning</button>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" class="input-field" id="checklistInput" placeholder="Add a checklist item...">
+                        <select class="input-field" id="categorySelect" style="flex: 0.5; min-width: 120px;">
+                            <option value="work">💼 Work</option>
+                            <option value="personal">🏠 Personal</option>
+                            <option value="health">💪 Health</option>
+                            <option value="learning">📚 Learning</option>
+                        </select>
+                        <button class="add-btn" onclick="addChecklistItem()">Add</button>
+                    </div>
+
+                    <div class="task-list" id="checklistItems">
+                        <div class="empty-state">
+                            <span class="empty-state-emoji">📝</span>
+                            <p>Your checklist is empty. Start adding items!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="text-align: center;">
+                    <div class="card-header" style="justify-content: center;">
+                        <h2 class="card-title">Today's Progress</h2>
+                    </div>
+                    
+                    <svg class="progress-ring" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#F0F0F0" stroke-width="10"/>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="url(#gradient)" stroke-width="10" 
+                                stroke-linecap="round" stroke-dasharray="314.159" stroke-dashoffset="314.159"
+                                transform="rotate(-90 60 60)" id="progressCircle"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#B8F4D4"/>
+                                <stop offset="100%" style="stop-color:#E8D5FF"/>
+                            </linearGradient>
+                        </defs>
+                        <text x="60" y="55" class="progress-text" id="progressPercent">0%</text>
+                        <text x="60" y="75" class="progress-label">completed</text>
+                    </svg>
+
+                    <div style="margin-top: 20px;">
+                        <p style="font-size: 14px; color: var(--text-secondary);">
+                            <span id="completedCount">0</span> of <span id="totalCount">0</span> tasks done
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Journal Page -->
+        <section class="page" id="journal">
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: var(--accent-lavender);">✍️</div>
+                        <h2 class="card-title">Today's Reflection</h2>
+                    </div>
+
+                    <div class="journal-prompts">
+                        <button class="prompt-chip" onclick="insertPrompt('What made me smile today?')">😊 What made me smile?</button>
+                        <button class="prompt-chip" onclick="insertPrompt('What did I learn today?')">🧠 What did I learn?</button>
+                        <button class="prompt-chip" onclick="insertPrompt('What am I grateful for?')">🙏 Gratitude</button>
+                        <button class="prompt-chip" onclick="insertPrompt('What could I improve?')">📈 Improvement</button>
+                        <button class="prompt-chip" onclick="insertPrompt('How am I feeling right now?')">💭 Feelings</button>
+                    </div>
+
+                    <textarea class="journal-textarea" id="journalText" placeholder="Write your thoughts here... This is your safe space. ✨"></textarea>
+                    
+                    <button class="save-btn" onclick="saveJournal()" style="margin-top: 16px;">Save Entry 📝</button>
+                </div>
+
+                <div class="card" style="grid-column: 1 / -1;">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: var(--accent-mint);">📚</div>
+                        <h2 class="card-title">Past Entries</h2>
+                    </div>
+                    <div class="journal-entries" id="journalEntries">
+                        <div class="empty-state">
+                            <span class="empty-state-emoji">📖</span>
+                            <p>No journal entries yet. Start writing above!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Page -->
+        <section class="page" id="stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTasks">0</div>
+                    <div class="stat-label">Tasks Done</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statHours">0</div>
+                    <div class="stat-label">Hours Studied</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statStreak">0</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statEntries">0</div>
+                    <div class="stat-label">Journal Entries</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">📊 Weekly Study Hours</h3>
+                <div class="chart-bars" id="weeklyChart">
+                    <!-- Bars will be generated by JS -->
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <div class="card-icon" style="background: var(--accent-coral);">😊</div>
+                    <h2 class="card-title">Mood History (Last 7 Days)</h2>
+                </div>
+                <div class="mood-history" id="moodHistory">
+                    <!-- Mood dots will be generated by JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Saved successfully! ✨</div>
+
+    <script>
+        // ==================== DATA MANAGEMENT ====================
+        const defaultData = {
+            mode: 'discipline',
+            streak: 0,
+            lastActiveDate: null,
+            tasks: [],
+            checklist: [],
+            journals: [],
+            dailyLogs: {},
+            weeklyHours: [0, 0, 0, 0, 0, 0, 0]
+        };
+
+        let appData = JSON.parse(localStorage.getItem('alterEgoData')) || defaultData;
+
+        function saveData() {
+            localStorage.setItem('alterEgoData', JSON.stringify(appData));
+        }
+
+        // ==================== PERSONALITY RESPONSES ====================
+        const responses = {
+            savage: {
+                productive: {
+                    high: ["Okay legend, you actually did something today. Rare.", "Look at you being productive. Screenshot this, it won't happen again 📸"],
+                    medium: ["Mid effort but at least you showed up. Barely.", "You did... something. I guess that's your version of excellence?"],
+                    low: ["One task? That's embarrassing. My expectations were low but WOW.", "You call this productive? The bar was on the floor and you brought a shovel 💀"]
+                },
+                motivated: {
+                    high: ["That motivation better translate to action. Prove it.", "Motivated AND productive? Who are you and what happened to the old you?"],
+                    medium: ["Motivation without results is just daydreaming with extra steps.", "Cute that you're motivated. Now actually do something."],
+                    low: ["Motivated but lazy is an interesting combo. Very you.", "All that motivation and this is what we got? Comedy."]
+                },
+                tired: {
+                    high: ["Tired but still grinding? Okay I respect that. Slightly.", "Being tired is not an excuse but you made it work. Barely impressed."],
+                    medium: ["Tired already? The day just started. Pathetic.", "Maybe try being tired AFTER you accomplish something?"],
+                    low: ["Tired and unproductive. What a unique combination. /s", "Did you actually do anything or just exist tiredly?"]
+                },
+                stressed: {
+                    high: ["Stressed but still productive? Okay I'll allow it.", "You work well under pressure. Or at least better than usual."],
+                    medium: ["Stressed about what? Certainly not your productivity.", "The stress isn't helping if you're still underperforming."],
+                    low: ["Stressed AND unproductive. At least be one or the other.", "What exactly are you stressed about? Definitely not your workload."]
+                },
+                neutral: {
+                    high: ["Neutral mood, decent output. Very beige of you.", "You're giving... adequate. Revolutionary."],
+                    medium: ["Neutral everything. You're basically NPC status today.", "The most average day from the most average person."],
+                    low: ["Neutral mood, zero effort. At least commit to something.", "Even your mediocrity is mediocre. Impressive in a sad way."]
+                }
+            },
+            discipline: {
+                productive: {
+                    high: ["Excellent execution. This is what consistent effort looks like. Keep building.", "You showed up and delivered. Discipline beats motivation every time."],
+                    medium: ["Decent progress. Tomorrow, aim higher. The gap between good and great is consistency.", "You did the work. Now do it again tomorrow. That's how habits form."],
+                    low: ["Every task completed is progress. But discipline means pushing past the minimum.", "Start small, but start. Tomorrow, add one more task to your list."]
+                },
+                motivated: {
+                    high: ["Channel that motivation into systems. Feelings fade, habits remain.", "Good energy today. Convert it into completed tasks."],
+                    medium: ["Motivation is fuel, discipline is the engine. Build the engine.", "Use this feeling to establish routines that don't depend on how you feel."],
+                    low: ["Motivation without action is just entertainment. Execute.", "Feeling motivated? Prove it. The work is waiting."]
+                },
+                tired: {
+                    high: ["Working through fatigue builds mental resilience. Well done.", "Tired but still executing? That's the discipline that separates achievers."],
+                    medium: ["Rest is part of the process, but so is showing up. Balance both.", "Your body is tired. Let your systems carry you through."],
+                    low: ["Sometimes rest is strategic. Recover, then return stronger tomorrow.", "If you're truly depleted, rest. But be honest about the difference between tired and avoidant."]
+                },
+                stressed: {
+                    high: ["Pressure reveals character. You're handling it well.", "Stress is information. You're processing it through productive action."],
+                    medium: ["Break down what's overwhelming you. Small steps, clear priorities.", "Stress often comes from unclear priorities. Define your top 3 tasks."],
+                    low: ["When stressed, focus on one thing only. Complete it. Then the next.", "Overwhelm is a signal to simplify, not stop. Pick one task."]
+                },
+                neutral: {
+                    high: ["Steady state, solid output. This is sustainable excellence.", "Neutral days with consistent effort compound into significant results."],
+                    medium: ["Use neutral energy for systems thinking. Plan, organize, prepare.", "Not every day needs to be a breakthrough. Maintenance matters too."],
+                    low: ["Neutral isn't an excuse for inaction. Discipline works regardless of mood.", "Show up anyway. The best work often happens without inspiration."]
+                }
+            },
+            bestie: {
+                productive: {
+                    high: ["OMG you crushed it today!! 🎉 So proud of you!! You're literally amazing!", "Look at you being all productive and stuff!! You're doing SO well 💛✨"],
+                    medium: ["You're doing great sweetie! Every little bit counts and I see your effort! 🌟", "Progress is progress babe!! You showed up and that's what matters! 💕"],
+                    low: ["Hey, you did SOMETHING and that's honestly a win! Baby steps still move forward! 🐣", "Even one task is one more than zero! You're doing better than you think! 💛"]
+                },
+                motivated: {
+                    high: ["YESSS this energy!! You're unstoppable today!! Keep shining!! ✨💪", "I love this for you!! Motivated AND productive?? Main character energy!! 🌟"],
+                    medium: ["Love that motivated feeling for you!! You're gonna do great things! 💕", "That spark in you?? It's beautiful. Trust the process, you've got this! 🔥"],
+                    low: ["The motivation is THERE and that's the first step!! You're already winning! 🎉", "Feeling motivated is half the battle! Tomorrow you'll channel it even better! 💛"]
+                },
+                tired: {
+                    high: ["You pushed through even when tired?? That's actual hero behavior!! Rest well tonight! 💤✨", "Being tired and still showing up?? You're stronger than you know!! 💪💛"],
+                    medium: ["It's okay to be tired, you're human! You still did your best! 🤗", "Rest is part of growth too! Be gentle with yourself today 💕"],
+                    low: ["Tired days are valid! Listen to your body, it's telling you something! 💤", "Some days are just survival days and that's OKAY! Tomorrow is new! 🌅"]
+                },
+                stressed: {
+                    high: ["You handled that stress like a BOSS!! I'm so impressed by your resilience! 💪", "Working through stress takes so much strength! You're doing amazing! 🌟"],
+                    medium: ["Stress is tough but you're tougher! Take breaks, you deserve them! 💛", "I see you carrying a lot. You're handling it better than you realize! 🤗"],
+                    low: ["Hey, stressed AND still trying? That takes courage! Be proud of showing up! 💕", "Stress is temporary, you are permanent! This feeling will pass! 🌈"]
+                },
+                neutral: {
+                    high: ["Chill vibes AND getting stuff done? That's the dream tbh! 💛✨", "Love a calm productive day for you!! Balance is everything! 🧘‍♀️"],
+                    medium: ["Neutral is totally valid! Not every day needs to be extra! You're doing fine! 💕", "Sometimes okay IS enough! You're exactly where you need to be! 🌸"],
+                    low: ["Even on meh days, you matter! Tomorrow might feel different! 💛", "It's okay to just exist sometimes! You don't always have to be doing! 🤗"]
+                }
+            }
+        };
+
+        const moodEmojis = {
+            productive: "😎",
+            motivated: "🔥",
+            neutral: "😐",
+            tired: "😴",
+            stressed: "😭"
+        };
+
+        function getResponse() {
+            const mode = appData.mode;
+            const mood = document.querySelector('.mood-btn.active')?.dataset.mood || 'neutral';
+            const hours = parseFloat(document.getElementById('hoursInput').value) || 0;
+            const tasksCompleted = appData.tasks.filter(t => t.completed).length;
+            const totalTasks = appData.tasks.length;
+            
+            let productivity = 'low';
+            if ((hours >= 4 && tasksCompleted >= 3) || (hours >= 6) || (tasksCompleted >= 5)) {
+                productivity = 'high';
+            } else if ((hours >= 2 && tasksCompleted >= 1) || hours >= 3 || tasksCompleted >= 2) {
+                productivity = 'medium';
+            }
+
+            const responseArray = responses[mode][mood][productivity];
+            const randomResponse = responseArray[Math.floor(Math.random() * responseArray.length)];
+            
+            document.getElementById('responseText').textContent = randomResponse;
+            document.getElementById('responseEmoji').textContent = 
+                mode === 'savage' ? '😈' : 
+                mode === 'discipline' ? '🧠' : '🫶';
+        }
+
+        // ==================== NAVIGATION ====================
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(btn.dataset.page).classList.add('active');
+                
+                if (btn.dataset.page === 'stats') {
+                    updateStats();
+                }
+            });
+        });
+
+        // ==================== MODE SELECTOR ====================
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                appData.mode = btn.dataset.mode;
+                saveData();
+                getResponse();
+            });
+        });
+
+        // ==================== MOOD BUTTONS ====================
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                getResponse();
+            });
+        });
+
+        // ==================== TASKS ====================
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            appData.tasks.push({
+                id: Date.now(),
+                text: text,
+                completed: false,
+                createdAt: new Date().toISOString()
+            });
+            
+            input.value = '';
+            saveData();
+            renderTasks();
+            getResponse();
+        }
+
+        document.getElementById('taskInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        function toggleTask(id) {
+            const task = appData.tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveData();
+                renderTasks();
+                getResponse();
+            }
+        }
+
+        function deleteTask(id) {
+            appData.tasks = appData.tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+            getResponse();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('taskList');
+            
+            if (appData.tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-state-emoji">🎯</span>
+                        <p>No tasks yet. Add one above!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = appData.tasks.map(task => `
+                <div class="task-item ${task.completed ? 'completed' : ''}">
+                    <div class="task-checkbox ${task.completed ? 'checked' : ''}" 
+                         onclick="toggleTask(${task.id})"></div>
+                    <span class="task-text">${task.text}</span>
+                    <button class="task-delete" onclick="deleteTask(${task.id})">×</button>
+                </div>
+            `).join('');
+        }
+
+        // ==================== CHECKLIST ====================
+        let currentCategory = 'all';
+
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.dataset.category;
+                renderChecklist();
+            });
+        });
+
+        function addChecklistItem() {
+            const input = document.getElementById('checklistInput');
+            const category = document.getElementById('categorySelect').value;
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            appData.checklist.push({
+                id: Date.now(),
+                text: text,
+                category: category,
+                completed: false,
+                createdAt: new Date().toISOString()
+            });
+            
+            input.value = '';
+            saveData();
+            renderChecklist();
+        }
+
+        document.getElementById('checklistInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addChecklistItem();
+        });
+
+        function toggleChecklistItem(id) {
+            const item = appData.checklist.find(i => i.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                saveData();
+                renderChecklist();
+            }
+        }
+
+        function deleteChecklistItem(id) {
+            appData.checklist = appData.checklist.filter(i => i.id !== id);
+            saveData();
+            renderChecklist();
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('checklistItems');
+            let items = appData.checklist;
+            
+            if (currentCategory !== 'all') {
+                items = items.filter(i => i.category === currentCategory);
+            }
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-state-emoji">📝</span>
+                        <p>No items in this category!</p>
+                    </div>`;
+            } else {
+                const categoryIcons = { work: '💼', personal: '🏠', health: '💪', learning: '📚' };
+                
+                container.innerHTML = items.map(item => `
+                    <div class="task-item ${item.completed ? 'completed' : ''}">
+                        <div class="task-checkbox ${item.completed ? 'checked' : ''}" 
+                             onclick="toggleChecklistItem(${item.id})"></div>
+                        <span class="task-text">${categoryIcons[item.category]} ${item.text}</span>
+                        <button class="task-delete" onclick="deleteChecklistItem(${item.id})">×</button>
+                    </div>
+                `).join('');
+            }
+
+            // Update progress ring
+            const total = appData.checklist.length;
+            const completed = appData.checklist.filter(i => i.completed).length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('totalCount').textContent = total;
+            
+            const circle = document.getElementById('progressCircle');
+            const circumference = 314.159;
+            const offset = circumference - (percent / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        // ==================== JOURNAL ====================
+        function insertPrompt(prompt) {
+            const textarea = document.getElementById('journalText');
+            textarea.value = textarea.value + (textarea.value ? '\n\n' : '') + prompt + '\n';
+            textarea.focus();
+        }
+
+        function saveJournal() {
+            const text = document.getElementById('journalText').value.trim();
+            
+            if (!text) {
+                showToast('Write something first! 📝');
+                return;
+            }
+            
+            appData.journals.unshift({
+                id: Date.now(),
+                text: text,
+                date: new Date().toISOString(),
+                mood: document.querySelector('.mood-btn.active')?.dataset.mood || 'neutral'
+            });
+            
+            document.getElementById('journalText').value = '';
+            saveData();
+            renderJournals();
+            showToast('Journal entry saved! ✍️');
+        }
+
+        function renderJournals() {
+            const container = document.getElementById('journalEntries');
+            
+            if (appData.journals.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-state-emoji">📖</span>
+                        <p>No journal entries yet. Start writing above!</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = appData.journals.slice(0, 10).map(entry => {
+                const date = new Date(entry.date);
+                const formatted = date.toLocaleDateString('en-US', { 
+                    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+                });
+                
+                return `
+                    <div class="journal-entry">
+                        <div class="journal-entry-date">${moodEmojis[entry.mood] || '😐'} ${formatted}</div>
+                        <div class="journal-entry-text">${entry.text.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== STATS ====================
+        function updateStats() {
+            // Tasks completed (all time)
+            const totalTasksCompleted = appData.tasks.filter(t => t.completed).length + 
+                                       appData.checklist.filter(i => i.completed).length;
+            document.getElementById('statTasks').textContent = totalTasksCompleted;
+            
+            // Total hours this week
+            const totalHours = appData.weeklyHours.reduce((a, b) => a + b, 0);
+            document.getElementById('statHours').textContent = totalHours.toFixed(1);
+            
+            // Streak
+            document.getElementById('statStreak').textContent = appData.streak;
+            
+            // Journal entries
+            document.getElementById('statEntries').textContent = appData.journals.length;
+            
+            // Weekly chart
+            renderWeeklyChart();
+            
+            // Mood history
+            renderMoodHistory();
+        }
+
+        function renderWeeklyChart() {
+            const container = document.getElementById('weeklyChart');
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const maxHours = Math.max(...appData.weeklyHours, 1);
+            
+            container.innerHTML = days.map((day, i) => {
+                const hours = appData.weeklyHours[i];
+                const height = (hours / maxHours) * 180;
+                
+                return `
+                    <div class="chart-bar-container">
+                        <span class="chart-value">${hours}h</span>
+                        <div class="chart-bar" style="height: ${Math.max(height, 4)}px;"></div>
+                        <span class="chart-label">${day}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMoodHistory() {
+            const container = document.getElementById('moodHistory');
+            
+            // Get last 7 journal entries with moods
+            const recentMoods = appData.journals.slice(0, 7);
+            
+            if (recentMoods.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-size: 14px;">No mood data yet. Start journaling!</p>';
+                return;
+            }
+
+            const moodColors = {
+                productive: 'var(--accent-mint)',
+                motivated: 'var(--accent-lavender)',
+                neutral: 'var(--accent-peach)',
+                tired: 'var(--accent-sky)',
+                stressed: 'var(--accent-coral)'
+            };
+
+            container.innerHTML = recentMoods.map(entry => `
+                <div class="mood-dot" style="background: ${moodColors[entry.mood] || moodColors.neutral};" 
+                     title="${new Date(entry.date).toLocaleDateString()}">
+                    ${moodEmojis[entry.mood] || '😐'}
+                </div>
+            `).join('');
+        }
+
+        // ==================== STREAK MANAGEMENT ====================
+        function checkStreak() {
+            const today = new Date().toDateString();
+            
+            if (appData.lastActiveDate) {
+                const lastDate = new Date(appData.lastActiveDate);
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastDate.toDateString() === yesterday.toDateString()) {
+                    // Continue streak
+                } else if (lastDate.toDateString() !== today) {
+                    // Streak broken
+                    appData.streak = 0;
+                }
+            }
+            
+            document.getElementById('streakCount').textContent = appData.streak;
+        }
+
+        // ==================== SAVE DAY ====================
+        function saveDay() {
+            const today = new Date();
+            const dayIndex = (today.getDay() + 6) % 7; // Monday = 0
+            const hours = parseFloat(document.getElementById('hoursInput').value) || 0;
+            
+            // Update weekly hours
+            appData.weeklyHours[dayIndex] = hours;
+            
+            // Update streak
+            const todayStr = today.toDateString();
+            if (appData.lastActiveDate !== todayStr) {
+                appData.streak++;
+                appData.lastActiveDate = todayStr;
+            }
+            
+            // Save daily log
+            appData.dailyLogs[todayStr] = {
+                hours: hours,
+                mood: document.querySelector('.mood-btn.active')?.dataset.mood || 'neutral',
+                tasksCompleted: appData.tasks.filter(t => t.completed).length,
+                totalTasks: appData.tasks.length
+            };
+            
+            saveData();
+            document.getElementById('streakCount').textContent = appData.streak;
+            document.getElementById('weeklyHours').textContent = 
+                appData.weeklyHours.reduce((a, b) => a + b, 0).toFixed(1) + 'h';
+            
+            showToast('Day saved! Keep going! 🔥');
+            getResponse();
+        }
+
+        // ==================== TOAST ====================
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            // Set active mode button
+            document.querySelector(`.mode-btn[data-mode="${appData.mode}"]`)?.classList.add('active');
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                if (btn.dataset.mode !== appData.mode) btn.classList.remove('active');
+            });
+            
+            // Check and display streak
+            checkStreak();
+            
+            // Update weekly hours display
+            document.getElementById('weeklyHours').textContent = 
+                appData.weeklyHours.reduce((a, b) => a + b, 0).toFixed(1) + 'h';
+            
+            // Render all lists
+            renderTasks();
+            renderChecklist();
+            renderJournals();
+            
+            // Set today's hours if logged
+            const today = new Date().toDateString();
+            if (appData.dailyLogs[today]) {
+                document.getElementById('hoursInput').value = appData.dailyLogs[today].hours;
+            }
+            
+            // Initial response
+            getResponse();
+        }
+
+        // Run on load
+        init();
+
+        // Reset weekly hours on Monday
+        const today = new Date();
+        if (today.getDay() === 1) { // Monday
+            const lastMonday = new Date(appData.lastActiveDate || today);
+            if (lastMonday.getDay() !== 1 || 
+                (today - lastMonday) > 7 * 24 * 60 * 60 * 1000) {
+                appData.weeklyHours = [0, 0, 0, 0, 0, 0, 0];
+                saveData();
+            }
+        }
+    </script>
+</body>
+</html>
